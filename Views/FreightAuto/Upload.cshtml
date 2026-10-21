@@ -1,0 +1,601 @@
+﻿@{
+    ViewBag.Title = "Upload";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+
+    .upload-wrapper {
+        max-width: 650px;
+        margin: 40px auto;
+    }
+
+    .upload-card {
+        background: white;
+        border-radius: 12px;
+        padding: 35px;
+        border: 1px solid #e5e9ef;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    }
+
+    .upload-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+        .upload-header h2 {
+            margin: 0;
+            font-size: 25px;
+            font-weight: 600;
+            color: #202938;
+        }
+
+        .upload-header p {
+            margin-top: 8px;
+            color: #777;
+            font-size: 14px;
+        }
+
+    .form-group {
+        margin-bottom: 22px;
+    }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+    .file-input {
+        width: 100%;
+        padding: 12px;
+        border: 2px dashed #b8c7d9;
+        border-radius: 8px;
+        background-color: #f8fbff;
+        cursor: pointer;
+        box-sizing: border-box;
+    }
+
+        .file-input:hover {
+            border-color: #007bff;
+            background-color: #f1f7ff;
+        }
+
+    .file-info {
+        margin-top: 8px;
+        font-size: 12px;
+        color: #888;
+    }
+
+    .upload-button {
+        width: 100%;
+        padding: 13px;
+        border: none;
+        border-radius: 7px;
+        background-color: #007bff;
+        color: white;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+        .upload-button:hover {
+            background-color: #0056b3;
+        }
+
+        .upload-button:disabled {
+            background-color: #8dbcf0;
+            cursor: not-allowed;
+        }
+
+    #uploadMessage {
+        margin-top: 20px;
+    }
+
+    .success-message {
+        padding: 12px 15px;
+        border-radius: 7px;
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+        font-size: 14px;
+    }
+
+    .error-message {
+        padding: 12px 15px;
+        border-radius: 7px;
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+        font-size: 14px;
+    }
+
+    .loading-message {
+        padding: 12px 15px;
+        border-radius: 7px;
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeeba;
+        font-size: 14px;
+    }
+
+    .download-section {
+        margin-top: 15px;
+    }
+
+    .download-button {
+        display: block;
+        width: 100%;
+        padding: 13px;
+        border: none;
+        border-radius: 7px;
+        background-color: #28a745;
+        color: white;
+        text-align: center;
+        text-decoration: none;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+        .download-button:hover {
+            background-color: #218838;
+            color: white;
+        }
+
+        .download-button:disabled {
+            background-color: #a8a8a8;
+            color: #eeeeee;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+            .download-button:disabled:hover {
+                background-color: #a8a8a8;
+            }
+</style>
+
+
+<div class="upload-wrapper">
+
+    <div class="upload-card">
+
+        <div class="upload-header">
+
+            <h2>Upload Excel File</h2>
+
+            <p>
+                Select an Excel file to upload and save the data.
+            </p>
+
+        </div>
+
+
+        <!-- ==========================================
+             UPLOAD FORM
+             ========================================== -->
+
+        <form id="uploadForm"
+              action="@Url.Action("UploadExcel", "FreightAuto")"
+              method="post"
+              enctype="multipart/form-data">
+
+            <div class="form-group">
+
+                <label for="excelfile">
+                    Select Excel File
+                </label>
+
+                <input type="file"
+                       id="excelfile"
+                       name="excelfile"
+                       class="file-input"
+                       accept=".xlsx,.xls"
+                       required />
+
+                <div class="file-info">
+                    Supported formats: .xlsx, .xls
+                </div>
+
+            </div>
+
+
+            <!-- UPLOAD BUTTON -->
+
+            <button type="submit"
+                    id="uploadButton"
+                    class="upload-button">
+
+                Upload and Save
+
+            </button>
+
+        </form>
+
+
+        <!-- ==========================================
+             MESSAGE
+             ========================================== -->
+
+        <div id="uploadMessage"></div>
+
+
+        <!-- ==========================================
+             DOWNLOAD SECTION
+             ========================================== -->
+
+        <div class="download-section">
+
+            <button type="button"
+                    id="downloadButton"
+                    class="download-button"
+                    disabled>
+
+                Download Updated Excel
+
+            </button>
+
+        </div>
+
+
+    </div>
+
+</div>
+
+<script>
+
+    // ==========================================
+    // GLOBAL UPLOAD ID
+    // ==========================================
+
+    var latestUploadId = null;
+
+
+    // ==========================================
+    // GET ELEMENTS
+    // ==========================================
+
+    var uploadForm =
+        document.getElementById("uploadForm");
+
+    var uploadButton =
+        document.getElementById("uploadButton");
+
+    var downloadButton =
+        document.getElementById("downloadButton");
+
+    var uploadMessage =
+        document.getElementById("uploadMessage");
+
+    var fileInput =
+        document.getElementById("excelfile");
+
+
+    // ==========================================
+    // INITIAL STATE
+    // ==========================================
+
+    downloadButton.disabled = true;
+
+    latestUploadId = null;
+
+
+    // ==========================================
+    // UPLOAD FORM
+    // ==========================================
+
+    uploadForm.addEventListener("submit", function (e) {
+
+        e.preventDefault();
+
+
+        // ==========================================
+        // CHECK FILE
+        // ==========================================
+
+        if (fileInput.files.length === 0) {
+
+            uploadMessage.innerHTML =
+                '<div class="error-message">' +
+                'Please select an Excel file.' +
+                '</div>';
+
+            return;
+        }
+
+
+        // ==========================================
+        // DISABLE OLD DOWNLOAD
+        // ==========================================
+
+        latestUploadId = null;
+
+        downloadButton.disabled = true;
+
+
+        // ==========================================
+        // CREATE FORM DATA
+        // ==========================================
+
+        var formData =
+            new FormData(uploadForm);
+
+
+        // ==========================================
+        // DISABLE UPLOAD BUTTON
+        // ==========================================
+
+        uploadButton.disabled = true;
+
+        uploadButton.innerHTML =
+            "Uploading...";
+
+
+        // ==========================================
+        // SHOW LOADING MESSAGE
+        // ==========================================
+
+        uploadMessage.innerHTML =
+            '<div class="loading-message">' +
+            '⏳ Uploading Excel file. Please wait...' +
+            '</div>';
+
+
+        // ==========================================
+        // SEND FILE TO CONTROLLER
+        // ==========================================
+
+        fetch(uploadForm.action, {
+
+            method: "POST",
+
+            body: formData
+
+        })
+
+        .then(function (response) {
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Server error: " +
+                    response.status
+                );
+            }
+
+            return response.json();
+
+        })
+
+        .then(function (result) {
+
+
+            // ==========================================
+            // ENABLE UPLOAD BUTTON
+            // ==========================================
+
+            uploadButton.disabled = false;
+
+            uploadButton.innerHTML =
+                "Upload and Save";
+
+
+            // ==========================================
+            // SUCCESS
+            // ==========================================
+
+            if (result.success === true) {
+
+
+                // ==========================================
+                // SAVE NEW UPLOAD ID
+                // ==========================================
+
+                latestUploadId =
+                    result.uploadId;
+
+
+                // ==========================================
+                // SHOW SUCCESS MESSAGE
+                // ==========================================
+
+                uploadMessage.innerHTML =
+                    '<div class="success-message">' +
+
+                    '✓ ' +
+                    result.message +
+
+                    '<br><br>' +
+
+                    '<strong>Upload ID:</strong> ' +
+                    result.uploadId +
+
+                    '</div>';
+
+
+                // ==========================================
+                // ENABLE DOWNLOAD
+                // ==========================================
+
+                downloadButton.disabled = false;
+
+
+                // ==========================================
+                // CLEAR FILE INPUT
+                // ==========================================
+
+                fileInput.value = "";
+
+            }
+            else {
+
+
+                // ==========================================
+                // UPLOAD FAILED
+                // ==========================================
+
+                latestUploadId = null;
+
+                downloadButton.disabled = true;
+
+
+                uploadMessage.innerHTML =
+                    '<div class="error-message">' +
+
+                    '✗ ' +
+                    result.message +
+
+                    '</div>';
+            }
+
+        })
+
+        .catch(function (error) {
+
+
+            // ==========================================
+            // RESET UPLOAD BUTTON
+            // ==========================================
+
+            uploadButton.disabled = false;
+
+            uploadButton.innerHTML =
+                "Upload and Save";
+
+
+            // ==========================================
+            // DISABLE DOWNLOAD
+            // ==========================================
+
+            latestUploadId = null;
+
+            downloadButton.disabled = true;
+
+
+            // ==========================================
+            // SHOW ERROR
+            // ==========================================
+
+            uploadMessage.innerHTML =
+                '<div class="error-message">' +
+
+                '✗ Error while uploading Excel file.' +
+
+                '<br>' +
+
+                error.message +
+
+                '</div>';
+
+        });
+
+    });
+
+
+    // ==========================================
+    // DOWNLOAD BUTTON CLICK
+    // ==========================================
+
+    downloadButton.addEventListener(
+        "click",
+        function () {
+
+
+            // ==========================================
+            // CHECK UPLOAD ID
+            // ==========================================
+
+            if (latestUploadId === null) {
+
+                alert(
+                    "Please upload an Excel file first."
+                );
+
+                return;
+            }
+
+
+            // ==========================================
+            // SAVE CURRENT UPLOAD ID
+            // ==========================================
+
+            var downloadUploadId =
+                latestUploadId;
+
+
+            // ==========================================
+            // DISABLE DOWNLOAD IMMEDIATELY
+            // ==========================================
+
+            downloadButton.disabled = true;
+
+            downloadButton.innerHTML =
+                "Downloading...";
+
+
+            // ==========================================
+            // CREATE DOWNLOAD URL
+            // ==========================================
+
+            var downloadUrl =
+                '@Url.Action("DownloadExcel", "FreightAuto")' +
+                '?uploadId=' +
+                encodeURIComponent(downloadUploadId);
+
+
+            // ==========================================
+            // START DOWNLOAD
+            // ==========================================
+
+            window.location.href =
+                downloadUrl;
+
+
+            // ==========================================
+            // CLEAR UPLOAD ID
+            // ==========================================
+
+            latestUploadId = null;
+
+
+            // ==========================================
+            // RESET BUTTON
+            // ==========================================
+
+            setTimeout(function () {
+
+                downloadButton.innerHTML =
+                    "Download Updated Excel";
+
+            }, 1000);
+
+        }
+    );
+
+
+    // ==========================================
+    // WHEN USER SELECTS NEW FILE
+    // ==========================================
+
+    fileInput.addEventListener(
+        "change",
+        function () {
+
+            if (fileInput.files.length > 0) {
+
+                // Old UploadId is no longer valid
+                latestUploadId = null;
+
+                // Disable old download
+                downloadButton.disabled = true;
+
+                // Reset message
+                uploadMessage.innerHTML = "";
+
+            }
+
+        }
+    );
+
+</script>
